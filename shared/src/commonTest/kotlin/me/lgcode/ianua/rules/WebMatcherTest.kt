@@ -38,6 +38,15 @@ class WebMatcherTest {
     }
 
     @Test
+    fun readsSchemeLessAddressBars() {
+        assertEquals("abcDEF12345", matcher.gatedVideoIdInAddressBar("m.youtube.com/shorts/abcDEF12345"))
+        assertEquals("abcDEF12345", matcher.gatedVideoIdInAddressBar(" https://www.youtube.com/shorts/abcDEF12345 "))
+        assertNull(matcher.gatedVideoIdInAddressBar("m.youtube.com/watch?v=abcDEF12345"))
+        assertNull(matcher.gatedVideoIdInAddressBar("youtube shorts funny"))
+        assertNull(matcher.gatedVideoIdInAddressBar(""))
+    }
+
+    @Test
     fun continueLeadsToTheRegularPlayer() {
         assertEquals("https://www.youtube.com/watch?v=abcDEF12345", matcher.continueUrl("abcDEF12345"))
     }

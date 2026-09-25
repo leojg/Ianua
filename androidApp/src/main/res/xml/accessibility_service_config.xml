@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Scoped to the apps Ianua gates (ADR-0004). The service narrows packageNames again at runtime
-  from the rule pack's android.packages.
+  Scoped to the apps and browsers Ianua gates (ADR-0004, ADR-0005). The service replaces
+  packageNames at runtime with the rule pack's android.packages + android.browsers.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -13,5 +13,5 @@
     android:isAccessibilityTool="false"
     tools:ignore="UnusedAttribute"
     android:notificationTimeout="150"
-    android:packageNames="com.google.android.youtube"
+    android:packageNames="com.google.android.youtube,com.brave.browser,com.android.chrome,com.microsoft.emmx,org.mozilla.firefox,com.sec.android.app.sbrowser"
     android:settingsActivity="me.lgcode.ianua.ui.MainActivity" />

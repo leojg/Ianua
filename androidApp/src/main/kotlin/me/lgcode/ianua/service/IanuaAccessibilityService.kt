@@ -14,10 +14,12 @@ import me.lgcode.ianua.gate.GateDefaults
 import me.lgcode.ianua.gate.GatePolicy
 import me.lgcode.ianua.ianua
 import me.lgcode.ianua.rules.AndroidMatcher
+import me.lgcode.ianua.rules.WebMatcher
 
 /**
- * Watches the gated apps' screens (ADR-0004) and puts the gate in front of the Shorts player.
- * Screen content is only evaluated in memory; nothing is stored or sent.
+ * Watches the gated apps' screens (ADR-0004) and listed browsers' address bars (ADR-0005),
+ * and puts the gate in front of Shorts. Screen content is only evaluated in memory; nothing
+ * is stored or sent.
  */
 class IanuaAccessibilityService : AccessibilityService() {
     private val scope = MainScope()
@@ -26,6 +28,7 @@ class IanuaAccessibilityService : AccessibilityService() {
     private val evaluateRunnable = Runnable { evaluate() }
 
     private var matcher: AndroidMatcher? = null
+    private var urlBarIds: Set<String> = emptySet()
     private var enabled = true
     private var overlay: GateOverlay? = null
     private val audio by lazy { GateAudio(this) }
@@ -36,7 +39,8 @@ class IanuaAccessibilityService : AccessibilityService() {
         scope.launch {
             app.rules.load()
             combine(app.rules.current, app.settings.enabled) { pack, on -> pack to on }.collect { (pack, on) ->
-                matcher = pack.android?.let(::AndroidMatcher)
+                matcher = pack.android?.let { AndroidMatcher(it, pack.web?.let(::WebMatcher)) }
+                urlBarIds = pack.android?.browsers.orEmpty().flatMap { it.urlBarViewIds }.toSet()
                 enabled = on
                 narrowToGatedPackages()
                 if (!on) reset()
@@ -58,7 +62,7 @@ class IanuaAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         val packageName = root.packageName?.toString() ?: return
         val screen = NodeInfoScreenNode(root)
-        DebugDump.maybeDump(this, packageName, screen)
+        DebugDump.maybeDump(this, packageName, screen, keepTextOf = urlBarIds)
         when (policy.onScreen(matcher.isGatedScreen(packageName, screen))) {
             GateDecision.SHOW_GATE -> showGate()
             GateDecision.HIDE_GATE -> hideGate()

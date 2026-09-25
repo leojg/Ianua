@@ -9,7 +9,7 @@ v0.1 covers **YouTube Shorts** on two surfaces:
 | | What it does |
 |---|---|
 | **Chromium extension** (Chrome, Brave, Chromium, Edge) | Hides Shorts shelves, sidebar entries, grid/search results and channel Shorts tabs. Opening a Short (link, typed URL or in-page navigation) shows the gate. *Continue* opens the video in the regular player, so the swipe feed never appears. |
-| **Android app** | An accessibility service notices the Shorts player in the YouTube app, pauses playback and shows the gate. *Continue* unlocks Shorts for 5 minutes. |
+| **Android app** | An accessibility service notices the Shorts player in the YouTube app, or a Shorts address in Brave, Chrome, Firefox, Edge or Samsung Internet. It silences playback and shows the gate. *Continue* unlocks Shorts for 5 minutes. |
 
 Everything runs locally. The only network request is a daily download of updated detection
 rules from this repository (`rules/`).

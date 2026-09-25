@@ -32,6 +32,14 @@ data class AndroidRules(
     val packages: List<String>,
     /** The screen is gated when any of these rules matches. */
     val gatedScreens: List<ScreenRule>,
+    /** Browsers whose address bar is matched against the web rules (ADR-0005). */
+    val browsers: List<BrowserRule> = emptyList(),
+)
+
+@Serializable
+data class BrowserRule(
+    @kotlinx.serialization.SerialName("package") val packageName: String,
+    val urlBarViewIds: List<String>,
 )
 
 /** Matches when any visible node has one of the listed view ids or content descriptions. */

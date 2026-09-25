@@ -10,7 +10,8 @@ import me.lgcode.ianua.rules.ScreenSnapshot
 import java.io.File
 
 /**
- * Debug builds only: captures the next gated-app screen as a rules/fixtures/android JSON file.
+ * Debug builds only: captures the next gated-app or browser screen as a rules/fixtures/android
+ * JSON file. Only address-bar text is kept; other text is dropped.
  * This is how fixtures are refreshed when YouTube changes its view ids.
  */
 object DebugDump {
@@ -24,10 +25,10 @@ object DebugDump {
     }
 
     /** Called by the service for every evaluated screen; writes at most one dump per arming. */
-    fun maybeDump(context: Context, packageName: String, root: NodeInfoScreenNode) {
+    fun maybeDump(context: Context, packageName: String, root: NodeInfoScreenNode, keepTextOf: Set<String>) {
         if (!BuildConfig.DEBUG || SystemClock.elapsedRealtime() > armedUntil) return
         armedUntil = 0
-        val snapshot = ScreenSnapshot(packageName, NodeSnapshot.copyOf(root, { (it as NodeInfoScreenNode).info.className?.toString() }))
+        val snapshot = ScreenSnapshot(packageName, NodeSnapshot.copyOf(root, className = { (it as NodeInfoScreenNode).info.className?.toString() }, keepTextOf = keepTextOf))
         val dir = File(context.getExternalFilesDir(null), "dumps").apply { mkdirs() }
         val file = File(dir, "${packageName.substringAfterLast('.')}_${System.currentTimeMillis()}.json")
         file.writeText(snapshot.toJson())

@@ -13,6 +13,16 @@ class WebMatcher(private val rules: WebRules) {
         return paths.firstNotNullOfOrNull { it.find(parsed.path)?.groupValues?.get(1) }
     }
 
+    /**
+     * Like [gatedVideoId], for the text of a mobile browser's address bar, which usually
+     * omits the scheme (`m.youtube.com/shorts/…`).
+     */
+    fun gatedVideoIdInAddressBar(text: String): String? {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty() || trimmed.any { it.isWhitespace() }) return null
+        return gatedVideoId(if ("://" in trimmed) trimmed else "https://$trimmed")
+    }
+
     fun continueUrl(videoId: String): String = rules.continueUrl.replace("{id}", videoId)
 
     /**

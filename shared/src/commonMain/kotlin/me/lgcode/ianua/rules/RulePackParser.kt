@@ -61,6 +61,12 @@ object RulePackParser {
             if (android.gatedScreens.any { it.anyViewId.isEmpty() && it.anyContentDescription.isEmpty() }) {
                 return "android.gatedScreens contains an empty rule"
             }
+            if (android.browsers.isNotEmpty() && pack.web == null) {
+                return "android.browsers needs web rules to match URLs against"
+            }
+            if (android.browsers.any { it.packageName.isBlank() || it.urlBarViewIds.isEmpty() }) {
+                return "android.browsers needs a package and at least one urlBarViewId each"
+            }
         }
         return null
     }

@@ -1,0 +1,29 @@
+{
+  "packageName": "com.brave.browser",
+  "root": {
+    "className": "android.widget.FrameLayout",
+    "children": [
+      {
+        "className": "android.widget.FrameLayout",
+        "viewId": "com.brave.browser:id/toolbar",
+        "children": [
+          {
+            "className": "android.widget.EditText",
+            "viewId": "com.brave.browser:id/url_bar",
+            "text": "m.youtube.com/shorts/abcDEF12345"
+          }
+        ]
+      },
+      {
+        "className": "android.widget.FrameLayout",
+        "viewId": "com.brave.browser:id/compositor_view_holder",
+        "children": [
+          {
+            "className": "android.webkit.WebView",
+            "contentDescription": "YouTube"
+          }
+        ]
+      }
+    ]
+  }
+}

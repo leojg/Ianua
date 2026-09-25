@@ -75,6 +75,16 @@ class RulePackParserTest {
     }
 
     @Test
+    fun browsersNeedWebRulesAndUrlBarIds() {
+        val android = """{"packages":["a.b"],"gatedScreens":[{"anyViewId":["a.b:id/x"]}],"browsers":[{"package":"c.d","urlBarViewIds":["c.d:id/url_bar"]}]}"""
+        assertIs<ParseResult.Ok>(RulePackParser.parse(pack().dropLast(1) + ""","android":$android}"""))
+        assertIs<ParseResult.Invalid>(RulePackParser.parse("""{"schemaVersion":1,"id":"t","version":1,"android":$android}"""))
+        assertIs<ParseResult.Invalid>(
+            RulePackParser.parse(pack().dropLast(1) + ""","android":${android.replace("\"c.d:id/url_bar\"", "")}}"""),
+        )
+    }
+
+    @Test
     fun countsCaptureGroups() {
         assertEquals(1, RulePackParser.captureGroupCount("^/shorts/([A-Za-z0-9_-]{5,})"))
         assertEquals(0, RulePackParser.captureGroupCount("\\(x\\)"))
