@@ -86,7 +86,7 @@ androidApp/             Jetpack Compose UI + IanuaAccessibilityService; flavors 
   predicates, evaluated against a platform-neutral `NodeSnapshot` tree. That keeps the
   matchers testable in `commonTest`.
 - **Rule refresh.** `RuleRepository` fetches
-  `https://raw.githubusercontent.com/leojg/Ianua/main/rules/youtube.json` about once a
+  `https://raw.githubusercontent.com/leojg/Ianua/master/rules/youtube.json` about once a
   day. It validates the result and keeps the last-known-good copy. It rejects packs with
   an unknown `schemaVersion` or a `version` lower than the current one, and falls back to
   the bundled copy. HTTP is `expect/actual`: `fetch` on JS, `HttpURLConnection` on

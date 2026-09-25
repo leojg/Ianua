@@ -18,7 +18,7 @@ class RuleRepositoryTest {
     private val store = InMemoryStore()
     private var remote: String? = null
     private val repo = RuleRepository(RuleRepository.YOUTUBE, store, { url ->
-        assertEquals("https://raw.githubusercontent.com/leojg/Ianua/main/rules/youtube.json", url)
+        assertEquals("https://raw.githubusercontent.com/leojg/Ianua/master/rules/youtube.json", url)
         remote
     })
     private val bundledVersion = repo.bundled.version

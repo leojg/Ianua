@@ -52,6 +52,6 @@ class RuleRepository(
 
     companion object {
         const val YOUTUBE = "youtube"
-        fun remoteUrl(id: String) = "https://raw.githubusercontent.com/leojg/Ianua/main/rules/$id.json"
+        fun remoteUrl(id: String) = "https://raw.githubusercontent.com/leojg/Ianua/master/rules/$id.json"
     }
 }

@@ -2,9 +2,9 @@
 
 One JSON file per site: what Ianua treats as short-form video and where it puts the gate.
 Every build bundles these files, and clients refresh them about daily from
-`https://raw.githubusercontent.com/leojg/Ianua/main/rules/<id>.json` (ADR-0003).
+`https://raw.githubusercontent.com/leojg/Ianua/master/rules/<id>.json` (ADR-0003).
 
-**Merging a change to `main` here ships it to every user.** Review it like a release.
+**Merging a change to `master` here ships it to every user.** Review it like a release.
 
 ## Format (`schemaVersion: 1`)
 

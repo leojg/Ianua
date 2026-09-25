@@ -13,7 +13,7 @@ a Chromium MV3 extension and an Android app. License: GPL-3.0.
    not elsewhere. Postmortems go in `docs/postmortem/<slug>.md`.
 
 ## Layout
-- `rules/` — rule packs (JSON, data only) and fixtures. Merging to `main` here ships to users
+- `rules/` — rule packs (JSON, data only) and fixtures. Merging to `master` here ships to users
   (ADR-0003).
 - `shared/` — Kotlin Multiplatform (Android + JS). All non-glue logic lives here, tested in
   `commonTest`.
