@@ -9,12 +9,16 @@ not TypeScript.
 
 ## Decision
 One Gradle monorepo:
-- `shared/`: KMP, `androidTarget` + `js(IR)`. All logic that is not platform glue lives here
-  and is tested in `commonTest`.
-- `extension/*`: Kotlin/JS executables (background service worker, content script, gate
-  page, popup). Hand-written `external` declarations cover only the `chrome.*` APIs used.
-  UI is `kotlinx-html` over plain DOM. No Compose Wasm/canvas, because of size and
-  first-paint cost in a popup.
+- `shared/`: KMP, `android` + `js(IR)` (Node). All logic that is not platform glue lives
+  here and is tested in `commonTest` on both targets.
+- `extension/`: one Kotlin/JS executable. The same bundle serves the service worker, content
+  script, gate page and popup; `Main.kt` picks the entry point. Hand-written `external`
+  declarations cover only the `chrome.*` APIs used. UI is `kotlinx-html` over plain DOM. No
+  Compose Wasm/canvas, because of size and first-paint cost in a popup.
+- The extension uses **stdlib coroutines only** (`startCoroutine` + a `Promise.await`), not
+  kotlinx-coroutines: its JS dispatcher crashed in the MV3 service worker. `shared` must
+  therefore not require a `CoroutineDispatcher` in code the extension calls. Suspend
+  functions and interfaces are fine.
 - `androidApp/`: Jetpack Compose (the Compose Multiplatform API). It can move to a CMP
   module if another UI target appears.
 

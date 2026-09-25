@@ -92,3 +92,9 @@ abstract class EmbedJsonTask : DefaultTask() {
         )
     }
 }
+
+// Android lint reads the source directories directly, without the task dependency that
+// kotlin.srcDir(task) carries for compilation.
+tasks.matching { it.name.startsWith("lint") || it.name.endsWith("LintModel") }.configureEach {
+    dependsOn(generateBundledRules, generateFixtures)
+}

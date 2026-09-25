@@ -17,7 +17,8 @@ a Chromium MV3 extension and an Android app. License: GPL-3.0.
   (ADR-0003).
 - `shared/` — Kotlin Multiplatform (Android + JS). All non-glue logic lives here, tested in
   `commonTest`.
-- `extension/` — Kotlin/JS modules (background, content, gate, popup) + `static/manifest.json`.
+- `extension/` — one Kotlin/JS bundle for every context (`Main.kt` dispatches), `static/`
+  (manifest, pages, icons), `e2e/` (Playwright smoke test). Stdlib coroutines only (ADR-0002).
 - `androidApp/` — Jetpack Compose + `IanuaAccessibilityService`; flavors `play`, `fdroid`.
 
 ## Hard rules
@@ -27,6 +28,15 @@ a Chromium MV3 extension and an Android app. License: GPL-3.0.
   (ADR-0004).
 - Nothing leaves the device except the daily rule-pack fetch from GitHub.
 - Every rule change updates `rules/fixtures/` so the tests exercise it.
+
+## Verify
+```bash
+./gradlew check                                   # shared tests (JS + JVM) + Android lint
+./gradlew :extension:packageExtension && (cd extension/e2e && npm ci && npm test)
+./gradlew :androidApp:assembleFdroidDebug :androidApp:assemblePlayDebug
+```
+The Android service needs a real device or an emulator. Say so when a change could not be
+run on one.
 
 ## Git
 Conventional Commits (`type(scope): summary`, scopes: `rules`, `shared`, `extension`,

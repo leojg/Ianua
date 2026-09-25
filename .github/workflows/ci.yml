@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test, lint and build
+        run: >
+          ./gradlew check
+          :extension:zipExtension
+          :androidApp:assembleFdroidDebug
+          :androidApp:assemblePlayDebug
+
+      - name: No Google Play Services or Firebase (ADR-0004)
+        run: |
+          for flavor in fdroid play; do
+            if ./gradlew -q :androidApp:dependencies --configuration ${flavor}ReleaseRuntimeClasspath | grep -iE "com\.google\.android\.gms|firebase"; then
+              echo "::error::$flavor pulls in GMS/Firebase"; exit 1
+            fi
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extension end-to-end
+        working-directory: extension/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ianua-builds
+          path: |
+            extension/build/store/ianua-extension.zip
+            androidApp/build/outputs/apk/*/debug/*.apk

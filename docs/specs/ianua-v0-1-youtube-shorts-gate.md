@@ -1,7 +1,7 @@
 # Ianua v0.1 — YouTube Shorts gate (Chromium extension + Android)
 
 **Date:** 2026-09-25
-**Status:** plan — awaiting review; then `/implement`.
+**Status:** implemented 2026-09-25 (see *Implementation notes* at the end).
 **Builds on:** ADR-0001 … ADR-0004 (all authored alongside this spec).
 
 ## Context
@@ -69,12 +69,13 @@ the web.
 ```
 rules/                  youtube.json (rule pack) + schema doc + fixtures/
 shared/                 KMP (androidTarget + js(IR)): rule model, parsing, matching, GatePolicy, RuleRepository
-extension/
-  background/           Kotlin/JS → service worker: nav interception, rule refresh (chrome.alarms)
-  content/              Kotlin/JS → content script: builds a display:none stylesheet from rule selectors
-  gate/                 Kotlin/JS → gate.html page: countdown, Go back / Continue
-  popup/                Kotlin/JS → popup: on/off toggle
-  static/               manifest.json, gate.html, popup.html, icons, dnr rules
+extension/              one Kotlin/JS module → one bundle (ianua.js), entry point picked per context:
+  Background.kt         service worker: nav interception, DNR redirects, rule refresh (chrome.alarms)
+  Content.kt            content script: display:none stylesheet from rule selectors, in-page nav gating
+  Gate.kt               gate.html page: countdown, Go back / Continue
+  Popup.kt              popup: on/off toggle
+  static/               manifest.json, gate.html, popup.html, ianua.css, icons
+  e2e/                  Playwright smoke test of the built extension
 androidApp/             Jetpack Compose UI + IanuaAccessibilityService; flavors `play` / `fdroid`
 ```
 
@@ -141,7 +142,7 @@ androidApp/             Jetpack Compose UI + IanuaAccessibilityService; flavors 
     resources).
 
 ### 4 — `extension/`
-- `static/manifest.json` (MV3):
+- `static/manifest.json` (MV3). *Implemented with dynamic DNR rules generated from the rule pack instead of a static ruleset, so `rules/` stays the only source:*
   - permissions: `storage`, `webNavigation`, `alarms`, `declarativeNetRequest`;
   - host permissions: `*://www.youtube.com/*`, `*://m.youtube.com/*`,
     `https://raw.githubusercontent.com/*`;
@@ -234,3 +235,30 @@ ADR-0001 … ADR-0004 are authored with this spec (first decisions in the repo).
   before the first F-Droid submission.
 - Deferred features: other sites/apps, configurable prompt, schedules/budgets, stats,
   strict mode, sync, Firefox, landing page at `ianua.lgcode.me`.
+
+## Implementation notes (2026-09-25)
+
+What shipped differs from the plan in these ways:
+
+- **One extension module and one bundle, not four.** Every context loads `ianua.js`, and
+  `Main.kt` picks the entry point. One Gradle module, one set of `chrome.*` bindings; about
+  250 KB minified.
+- **The extension uses no kotlinx-coroutines.** Its JS dispatcher crashed inside the MV3
+  service worker with `CoroutinesInternalError` (a continuation released twice). The same
+  code passed under Node. The extension now uses stdlib `startCoroutine` plus a
+  `Promise.await` (`Async.kt`). That is enough, because every suspension is a chrome.* promise.
+- **Redirects are dynamic DNR rules** built from the rule pack (`WebMatcher.navigationRegexFilters`).
+  The filter has to consume the whole URL: DNR replaces only the matched part, so
+  `?feature=share` leaked into the gate URL until the `.*` suffix was added. The e2e test
+  caught it.
+- **`shared`'s JS target is Node-only.** The browser test runner pulls Karma from GitHub,
+  and a Node-built library works fine in the webpack bundle.
+- **targetSdk 36, compileSdk 37.** 36 meets Google Play's current requirement. Moving to 37
+  needs a review of its behaviour changes (lint flags this on purpose).
+- **Fixtures are synthetic** (`rules/README.md` explains how to capture real ones). The
+  YouTube view ids and hide selectors are best-effort and not yet verified against the live
+  app and site.
+- **Android was not run on a device or emulator** (no KVM in the build environment). It
+  compiles, lints clean, and its matcher and policy logic are unit-tested in `shared`.
+  Everything that touches a real device, like the overlay, media pause, going back and the
+  onboarding flow, still needs manual testing.
