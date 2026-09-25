@@ -1,12 +1,9 @@
 package me.lgcode.ianua.service
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Context
-import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -31,6 +28,7 @@ class IanuaAccessibilityService : AccessibilityService() {
     private var matcher: AndroidMatcher? = null
     private var enabled = true
     private var overlay: GateOverlay? = null
+    private val audio by lazy { GateAudio(this) }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -70,13 +68,14 @@ class IanuaAccessibilityService : AccessibilityService() {
 
     private fun showGate() {
         if (overlay != null) return
-        sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE)
+        audio.silence()
         overlay = GateOverlay(this, policy, onGoBack = ::goBack, onContinue = ::proceed).also { it.show() }
     }
 
     private fun hideGate() {
         overlay?.dismiss()
         overlay = null
+        audio.restore()
     }
 
     private fun goBack() {
@@ -90,7 +89,6 @@ class IanuaAccessibilityService : AccessibilityService() {
     private fun proceed() {
         if (!policy.onContinue()) return
         hideGate()
-        sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY)
         // A single looping Short may produce no events; re-check when the allowance ends.
         handler.postDelayed(evaluateRunnable, GateDefaults.ALLOWANCE_MS + EVALUATE_DELAY_MS)
     }
@@ -104,12 +102,6 @@ class IanuaAccessibilityService : AccessibilityService() {
     private fun narrowToGatedPackages() {
         val packages = matcher?.packages ?: return
         serviceInfo = serviceInfo?.apply { packageNames = packages.toTypedArray() } ?: return
-    }
-
-    private fun sendMediaKey(keyCode: Int) {
-        val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
 
     override fun onInterrupt() = Unit

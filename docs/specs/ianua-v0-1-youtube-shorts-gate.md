@@ -262,3 +262,8 @@ What shipped differs from the plan in these ways:
   compiles, lints clean, and its matcher and policy logic are unit-tested in `shared`.
   Everything that touches a real device, like the overlay, media pause, going back and the
   onboarding flow, still needs manual testing.
+- **Silencing playback (device feedback):** a `KEYCODE_MEDIA_PAUSE` key did not reach the
+  Shorts player, so audio kept playing behind the gate. The gate now takes transient audio
+  focus, and if media is still playing 400 ms later it mutes the media stream until the gate
+  closes (`GateAudio.kt`). The media keys are gone, because they could also pause or start an
+  unrelated media app.
