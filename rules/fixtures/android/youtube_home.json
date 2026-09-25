@@ -1,0 +1,55 @@
+{
+  "packageName": "com.google.android.youtube",
+  "root": {
+    "className": "android.widget.FrameLayout",
+    "viewId": "com.google.android.youtube:id/app_layout",
+    "children": [
+      {
+        "className": "androidx.recyclerview.widget.RecyclerView",
+        "viewId": "com.google.android.youtube:id/results",
+        "children": [
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Some video - 12 minutes"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "viewId": "com.google.android.youtube:id/reel_shelf",
+            "children": [
+              {
+                "className": "android.widget.FrameLayout",
+                "contentDescription": "Short 1"
+              },
+              {
+                "className": "android.widget.FrameLayout",
+                "contentDescription": "Short 2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "className": "android.widget.FrameLayout",
+        "viewId": "com.google.android.youtube:id/pivot_bar",
+        "children": [
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Home"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Shorts"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Subscriptions"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "You"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "packageName": "com.google.android.youtube",
+  "root": {
+    "className": "android.widget.FrameLayout",
+    "viewId": "com.google.android.youtube:id/app_layout",
+    "children": [
+      {
+        "className": "android.widget.FrameLayout",
+        "viewId": "com.google.android.youtube:id/reel_player_page_container",
+        "children": [
+          {
+            "className": "androidx.recyclerview.widget.RecyclerView",
+            "viewId": "com.google.android.youtube:id/reel_recycler",
+            "children": [
+              {
+                "className": "android.widget.FrameLayout",
+                "viewId": "com.google.android.youtube:id/reel_watch_player"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "className": "android.widget.FrameLayout",
+        "viewId": "com.google.android.youtube:id/pivot_bar",
+        "children": [
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Home"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Shorts"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "Subscriptions"
+          },
+          {
+            "className": "android.widget.FrameLayout",
+            "contentDescription": "You"
+          }
+        ]
+      }
+    ]
+  }
+}

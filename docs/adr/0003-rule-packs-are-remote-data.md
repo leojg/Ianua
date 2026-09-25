@@ -10,7 +10,7 @@ The Chrome Web Store (MV3) forbids remotely hosted *code*; remote *data* is allo
 ## Decision
 - Detection rules live in `rules/<site>.json` (`schemaVersion`, `version`, `web`, `android`).
 - Every build bundles the current packs. Clients refresh about daily from
-  `https://raw.githubusercontent.com/leojg/ianua/main/rules/<site>.json`. They validate
+  `https://raw.githubusercontent.com/leojg/Ianua/main/rules/<site>.json`. They validate
   the pack, keep the last-known-good copy, and reject unknown `schemaVersion`s and version
   downgrades.
 - Rule packs are **data only**. Web rules carry selectors, never CSS text or scripts:

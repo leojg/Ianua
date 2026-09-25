@@ -1,0 +1,22 @@
+<!doctype html>
+<!--
+  SYNTHETIC fixture: mirrors the element names and attributes rules/youtube.json targets.
+  Replace with a real capture (save the rendered DOM of youtube.com) when refreshing rules.
+-->
+<html>
+<head><meta charset="utf-8"><title>YouTube (fixture)</title></head>
+<body>
+  <ytd-guide-entry-renderer id="guide-home"><a title="Home" href="/">Home</a></ytd-guide-entry-renderer>
+  <ytd-guide-entry-renderer id="guide-shorts"><a title="Shorts">Shorts</a></ytd-guide-entry-renderer>
+  <ytd-mini-guide-entry-renderer id="mini-shorts" aria-label="Shorts"><a>Shorts</a></ytd-mini-guide-entry-renderer>
+  <ytd-rich-item-renderer id="regular-video"><a href="/watch?v=abcDEF12345">A regular video</a></ytd-rich-item-renderer>
+  <ytd-rich-item-renderer id="shorts-item"><a href="/shorts/abcDEF12345">A short in the grid</a></ytd-rich-item-renderer>
+  <ytd-rich-section-renderer id="shorts-section">
+    <ytd-rich-shelf-renderer is-shorts><a href="/shorts/abcDEF12345">Shorts shelf</a></ytd-rich-shelf-renderer>
+  </ytd-rich-section-renderer>
+  <ytd-reel-shelf-renderer id="reel-shelf"><a href="/shorts/abcDEF12345">Reel shelf</a></ytd-reel-shelf-renderer>
+  <yt-tab-shape id="tab-videos" tab-title="Videos">Videos</yt-tab-shape>
+  <yt-tab-shape id="tab-shorts" tab-title="Shorts">Shorts</yt-tab-shape>
+  <button id="spa-shorts" onclick="history.pushState({}, '', '/shorts/spaDEF12345')">Open a short in-page</button>
+</body>
+</html>

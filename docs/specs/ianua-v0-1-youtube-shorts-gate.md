@@ -45,8 +45,8 @@ On the web, Shorts do not even appear in the feed.
 | Money | Free for now; keep the door open to a paid tier (Play flavor only). |
 | iOS / Safari | Out of scope for the near future. |
 | Language | Kotlin everywhere (Kotlin Multiplatform; Kotlin/JS for the extension). |
-| Android app id | `me.lgcode.iauna` — ⚠ **confirm spelling**: the project/repo is *Ianua*; the app id is permanent once published on Play. |
-| minSdk | **26** (Android 8.0) — recommended, pending confirmation. |
+| Android app id | `me.lgcode.ianua` — follows the owner's domain (landing page later at `ianua.lgcode.me`). |
+| minSdk | **26** (Android 8.0) — covers ~97% of devices; nothing in v0.1 needs more. |
 
 ## Approach
 
@@ -85,7 +85,7 @@ androidApp/             Jetpack Compose UI + IanuaAccessibilityService; flavors 
   predicates, evaluated against a platform-neutral `NodeSnapshot` tree. That keeps the
   matchers testable in `commonTest`.
 - **Rule refresh.** `RuleRepository` fetches
-  `https://raw.githubusercontent.com/leojg/ianua/main/rules/youtube.json` about once a
+  `https://raw.githubusercontent.com/leojg/Ianua/main/rules/youtube.json` about once a
   day. It validates the result and keeps the last-known-good copy. It rejects packs with
   an unknown `schemaVersion` or a `version` lower than the current one, and falls back to
   the bundled copy. HTTP is `expect/actual`: `fetch` on JS, `HttpURLConnection` on
@@ -162,7 +162,7 @@ androidApp/             Jetpack Compose UI + IanuaAccessibilityService; flavors 
   `extension/build/dist/` (loadable unpacked) and zips it for the Chrome Web Store.
 
 ### 5 — `androidApp/`
-- `applicationId "me.lgcode.iauna"` (pending spelling confirmation), `minSdk 26`,
+- `applicationId "me.lgcode.ianua"`, `minSdk 26`,
   `targetSdk`/`compileSdk` = latest. Product flavors `play` and `fdroid`, identical in
   v0.1; the `play` flavor exists so a future Play Billing dependency never reaches F-Droid.
   **No GMS/Firebase dependencies in any flavor.**
@@ -233,4 +233,4 @@ ADR-0001 … ADR-0004 are authored with this spec (first decisions in the repo).
 - **Google developer verification** for sideloaded apps (F-Droid) — check its status
   before the first F-Droid submission.
 - Deferred features: other sites/apps, configurable prompt, schedules/budgets, stats,
-  strict mode, sync, Firefox, landing page at `iauna.lgcode.me`.
+  strict mode, sync, Firefox, landing page at `ianua.lgcode.me`.
