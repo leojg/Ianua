@@ -46,6 +46,13 @@ To try the app, install the APK, open Ianua, read the disclosure and enable *Ian
 gate* in Accessibility settings. For an APK installed outside Google Play on Android 13+,
 first allow restricted settings (App info → ⋮).
 
+## Releasing
+
+The version lives in two places, which must match: `versionName` in
+`androidApp/build.gradle.kts` and `version` in `extension/static/manifest.json`. On every
+merge to `master`, the *Tag release* workflow tags the merge commit `v<version>`, unless that
+tag already exists. To release, bump both (and `versionCode`) in the PR.
+
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE).
