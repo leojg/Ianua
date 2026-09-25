@@ -1,0 +1,48 @@
+name: Tag release
+
+# After a merge to master, tag the commit with the app version (v<versionName>) if that tag
+# does not exist yet. Bump the version in both places below to get a new tag.
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read and check the version
+        id: version
+        run: |
+          android=$(sed -nE 's/^[[:space:]]*versionName = "([^"]+)".*/\1/p' androidApp/build.gradle.kts)
+          extension=$(jq -r .version extension/static/manifest.json)
+          echo "android=$android extension=$extension"
+          if [ -z "$android" ] || [ "$android" != "$extension" ]; then
+            echo "::error::versionName in androidApp/build.gradle.kts ($android) and version in extension/static/manifest.json ($extension) must match"
+            exit 1
+          fi
+          echo "tag=v$android" >> "$GITHUB_OUTPUT"
+
+      - name: Create the tag if it is new
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            echo "$TAG already exists; nothing to do."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898099+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Ianua $TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
+          echo "Tagged $GITHUB_SHA as $TAG" >> "$GITHUB_STEP_SUMMARY"

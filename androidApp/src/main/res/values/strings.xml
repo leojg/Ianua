@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ianua</string>
+    <string name="accessibility_service_label">Ianua Shorts gate</string>
+    <string name="accessibility_service_description">Ianua watches the YouTube app and the address bar of supported browsers, to notice when Shorts open and show a pause screen in front of them. It reads which screen is open and, in browsers, the web address you are on, never what you type. Nothing is stored or sent anywhere.</string>
+
+    <string name="tagline">A door in front of Shorts.</string>
+    <string name="status_active">Ianua is gating YouTube Shorts.</string>
+    <string name="status_paused">Ianua is paused. Shorts open freely.</string>
+    <string name="status_service_off">The accessibility service is off, so Ianua can\'t see when Shorts open.</string>
+    <string name="toggle_label">Gate YouTube Shorts</string>
+    <string name="rules_version">Rules v%1$s</string>
+    <string name="youtube_missing">The YouTube app isn\'t installed. Ianua has nothing to gate yet.</string>
+
+    <string name="disclosure_title">Before you turn it on</string>
+    <string name="disclosure_body">Ianua needs Android\'s accessibility service to notice when the YouTube app opens its Shorts player.\n\n• It only looks at the YouTube app and the address bar of supported browsers (Brave, Chrome, Firefox, Edge, Samsung Internet).\n• It reads which screen is open (view names) and, in browsers, the web address you are on. Never what you type, page contents or messages.\n• Everything happens on this phone. Nothing is stored or sent anywhere.\n• The only network request is a daily download of updated detection rules from GitHub.\n\nIt uses this access only to show the pause screen, go back, and pause playback.</string>
+    <string name="disclosure_accept">I understand, open settings</string>
+    <string name="restricted_title">Installed outside Google Play?</string>
+    <string name="restricted_body">Android 13 and later block accessibility services for apps installed from F-Droid or an APK until you allow it. If Ianua is greyed out in Accessibility settings: open App info, tap ⋮ (top right), then \"Allow restricted settings\".</string>
+    <string name="restricted_action">Open App info</string>
+
+    <string name="debug_dump">Dump the next YouTube screen (debug)</string>
+    <string name="debug_dump_armed">Open YouTube within 30 s. The screen is saved to Android/data/me.lgcode.ianua/files/dumps.</string>
+    <string name="debug_dump_saved">Ianua: screen saved to %1$s</string>
+</resources>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="28" fill="#8a4b2a"/>
+  <!-- door frame -->
+  <path d="M34 112V30a30 30 0 0 1 60 0v82" fill="none" stroke="#f6f3ee" stroke-width="9" stroke-linejoin="round"/>
+  <!-- door leaf, ajar -->
+  <path d="M42 112V34l32-10v94z" fill="#f6f3ee"/>
+  <circle cx="66" cy="72" r="4.5" fill="#8a4b2a"/>
+  <path d="M22 112h84" stroke="#f6f3ee" stroke-width="9" stroke-linecap="round"/>
+</svg>
