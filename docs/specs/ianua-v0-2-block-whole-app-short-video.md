@@ -217,3 +217,12 @@ new code anyway. Adding domains or packages to `blocked.json` needs no release.
   republish through `storage.onChanged`.
 - **Not verified:** package names and domains against real installs; the Android block flow on
   a device (no emulator here).
+- **Device feedback, then fixed: links from other sites hit an error page.** Clicking TikTok
+  in DuckDuckGo briefly showed Brave's "ERR_BLOCKED_BY_CLIENT" page before `blocked.html`,
+  and in plain Chromium the navigation stopped there. The same was true for Shorts links
+  clicked from another site, **since v0.1**. The browser checks `web_accessible_resources`
+  against the site the click came *from*, but the pages were only exposed to YouTube or the
+  blocked domains. `gate.html` and `blocked.html` are now exposed to `<all_urls>`. Two e2e
+  tests click through from a third-party page. The trade-off: any site can now detect that
+  Ianua is installed by probing those two URLs. That is acceptable for a self-control tool
+  and is noted for the store listing.

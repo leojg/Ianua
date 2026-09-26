@@ -34,6 +34,13 @@ await context.route(/^https:\/\/(www\.|m\.)?youtube\.com\//, (route) => {
 await context.route(/^https?:\/\/([a-z0-9-]+\.)*(tiktok\.com|blocked-example\.test)\//, (route) =>
   route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>site</title><p id="site">SITE LOADED</p>' }));
 
+// A third-party page linking out, like a search engine's results.
+await context.route('https://search.example/**', (route) =>
+  route.fulfill({ status: 200, contentType: 'text/html', body:
+    `<!doctype html><title>results</title>
+     <a id="tiktok" href="https://www.tiktok.com/@x">TikTok</a>
+     <a id="short" href="https://www.youtube.com/shorts/${ID}">A Short</a>` }));
+
 let worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
 const extensionId = new URL(worker.url()).host;
 const gatePrefix = `chrome-extension://${extensionId}/gate.html`;
@@ -145,6 +152,20 @@ await test('short links and bare domains are blocked too', async () => {
   }
   await page.close();
 });
+
+for (const [link, target] of [['#tiktok', /blocked\.html\?p=TikTok/], ['#short', /gate\.html\?v=/]]) {
+  await test(`a link from another site (${link}) lands on the extension page, with no error page on the way`, async () => {
+    const page = await context.newPage();
+    const failed = [];
+    page.on('requestfailed', (r) => failed.push(`${r.url()} ${r.failure()?.errorText}`));
+    await page.goto('https://search.example/');
+    await page.click(link);
+    await page.waitForURL(target);
+    await page.getByRole('heading').waitFor();
+    assert.deepEqual(failed.filter((f) => f.startsWith('chrome-extension://')), []);
+    await page.close();
+  });
+}
 
 await test('Go back leaves the blocked page', async () => {
   const page = await context.newPage();

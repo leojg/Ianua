@@ -60,31 +60,11 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "gate.html"
-      ],
-      "matches": [
-        "https://www.youtube.com/*",
-        "https://youtube.com/*",
-        "https://m.youtube.com/*"
-      ]
-    },
-    {
-      "resources": [
+        "gate.html",
         "blocked.html"
       ],
       "matches": [
-        "*://*.douyin.com/*",
-        "*://*.gifshow.com/*",
-        "*://*.iesdouyin.com/*",
-        "*://*.kuaishou.com/*",
-        "*://*.kwai.com/*",
-        "*://*.like.video/*",
-        "*://*.likee.video/*",
-        "*://*.mojapp.in/*",
-        "*://*.myjosh.in/*",
-        "*://*.tiktok.com/*",
-        "*://*.tiktokv.com/*",
-        "*://*.triller.co/*"
+        "<all_urls>"
       ]
     }
   ]
