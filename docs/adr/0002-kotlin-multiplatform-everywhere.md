@@ -16,7 +16,10 @@ One Gradle monorepo:
   declarations cover only the `chrome.*` APIs used. UI is `kotlinx-html` over plain DOM. No
   Compose Wasm/canvas, because of size and first-paint cost in a popup.
 - The extension uses **stdlib coroutines only** (`startCoroutine` + a `Promise.await`), not
-  kotlinx-coroutines: its JS dispatcher crashed in the MV3 service worker. `shared` must
+  kotlinx-coroutines. v0.1 blamed kotlinx's JS dispatcher for a crash in the MV3 service
+  worker. v0.2 found the likely real cause: a Kotlin/JS compiler bug that drops the suspension
+  point in `promise.await()[key]` on a `dynamic` (see `Async.kt`). Stdlib coroutines stay,
+  because they are smaller and all the extension needs. `shared` must
   therefore not require a `CoroutineDispatcher` in code the extension calls. Suspend
   functions and interfaces are fine.
 - `androidApp/`: Jetpack Compose (the Compose Multiplatform API). It can move to a CMP

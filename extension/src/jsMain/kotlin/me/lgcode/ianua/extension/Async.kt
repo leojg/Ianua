@@ -21,6 +21,12 @@ fun launch(block: suspend () -> Unit) {
     )
 }
 
+/**
+ * COMPILER PITFALL (Kotlin 2.4 / JS): never index a `dynamic` result straight off a suspend
+ * call. `promise.await()[key]` compiles without a suspension point, so it reads `null` and
+ * the promise later resumes a finished coroutine ("This continuation is already complete").
+ * Always assign first: `val items = promise.await(); items[key]`.
+ */
 suspend fun <T> Promise<T>.await(): T = suspendCoroutine { continuation ->
     then({ continuation.resume(it) }, { continuation.resumeWithException(it) })
 }

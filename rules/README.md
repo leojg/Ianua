@@ -1,6 +1,7 @@
 # Rule packs
 
-One JSON file per site: what Ianua treats as short-form video and where it puts the gate.
+One JSON file per pack: `youtube.json` says what Ianua treats as Shorts and where it puts
+the gate; `blocked.json` lists the platforms it blocks outright.
 Every build bundles these files, and clients refresh them about daily from
 `https://raw.githubusercontent.com/leojg/Ianua/master/rules/<id>.json` (ADR-0003).
 
@@ -19,6 +20,7 @@ Every build bundles these files, and clients refresh them about daily from
 | `web.hideSelectors` | CSS selectors to hide. **Selectors only**: `{ } ; @ < /* */ url( \` are rejected, and Ianua writes the `display: none` rule itself. Each selector is its own rule, so one that a browser doesn't support only disables itself. |
 | `android.packages` | App packages the accessibility service listens to. |
 | `android.gatedScreens` | The screen is gated when any rule matches a visible node: `anyViewId` (full resource ids) or `anyContentDescription` (exact, but localized, so prefer view ids). |
+| `block.platforms` | Optional (ADR-0006). `[{ "name", "domains", "androidPackages" }]`: platforms that are nothing but short videos, hard-blocked with no way through. A domain matches itself and every subdomain. `name` is shown on the block screen (letters, digits, spaces, `.'&-`, max 40). Entries that overlap a gated host, gated app or listed browser are ignored ("gate beats block"). **Adding a package** also needs it in the Android manifest's `<queries>` and the accessibility config (`./gradlew check` fails otherwise). **Adding a domain** works remotely at once but shows Chrome's plain error page until a release adds it to the extension's `host_permissions` (the e2e test checks the bundled ones). |
 | `android.browsers` | Optional. `[{ "package", "urlBarViewIds" }]`: browsers whose address bar is matched against `web.hosts` + `web.gatedPaths` (ADR-0005). The bar is read only while it isn't focused, so text being typed never triggers the gate. Requires `web`. **To add or fix a browser:** dump its screen on a Shorts page (see below), find the address-bar node's `viewId`, add it, bump `version`, and add the dump as a fixture. |
 
 ## Fixtures

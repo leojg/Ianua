@@ -1,13 +1,18 @@
 package me.lgcode.ianua.extension
 
-import me.lgcode.ianua.rules.RefreshResult
+import me.lgcode.ianua.rules.Packs
+import me.lgcode.ianua.rules.RuleRepository
 
 private const val REFRESH_ALARM = "refresh-rules"
 private const val REFRESH_PERIOD_MINUTES = 24 * 60
 
+// Dynamic DNR rule id ranges: Shorts redirects, then a redirect + block pair per blocked platform.
+private const val GATE_RULE_BASE = 1
+private const val BLOCK_RULE_BASE = 1000
+
 /**
- * Service worker. Owns the rule pack (bundled → fetched), mirrors it into storage for the other
- * contexts, and keeps the declarativeNetRequest redirect in sync with it and the toggle.
+ * Service worker. Owns the rule packs (bundled → fetched), mirrors them into storage for the
+ * other contexts, and keeps the declarativeNetRequest rules in sync with them and the toggle.
  * Listeners are registered synchronously, as MV3 requires.
  */
 fun backgroundMain() {
@@ -22,7 +27,13 @@ fun backgroundMain() {
         if (alarm.name == REFRESH_ALARM) launch { refreshRules() }
     }
     chrome.storage.onChanged.addListener { changes, area ->
-        if (area == "local" && changes[Keys.ENABLED] != undefined) launch { syncRedirects() }
+        if (area != "local") return@addListener
+        val keys = js("Object.keys")(changes).unsafeCast<Array<String>>()
+        when {
+            // A refresh saved a newer pack: republish everything.
+            keys.any { it.startsWith(Keys.FETCHED_PREFIX) } -> launch { publishRules() }
+            Keys.ENABLED in keys -> launch { syncDnrRules() }
+        }
     }
     // In-page (SPA) navigation never produces a network request for the DNR rule to catch.
     // The content script usually gates first via the Navigation API; this is the fallback.
@@ -32,21 +43,22 @@ fun backgroundMain() {
 }
 
 private suspend fun publishRules() {
-    saveEffectiveRules(youtubeRepository().current())
-    syncRedirects()
+    for (id in RuleRepository.bundledIds) saveEffectiveRules(repository(id).current())
+    syncDnrRules()
 }
 
+/** Saving a newer pack triggers [publishRules] through storage.onChanged. */
 private suspend fun refreshRules() {
-    val result = youtubeRepository().refresh()
-    console.info("Ianua: rule refresh → $result")
-    if (result is RefreshResult.Updated) publishRules()
+    for (id in RuleRepository.bundledIds) {
+        console.info("Ianua: rule refresh $id → ${repository(id).refresh()}")
+    }
 }
 
 private suspend fun gateTabIfNeeded(tabId: Int, url: String) {
     val state = loadState()
     if (!state.enabled) return
-    val id = state.matcher?.gatedVideoId(url) ?: return
-    val gate = gateUrl(id)
+    val video = state.packs.gatedVideo(url) ?: return
+    val gate = gateUrl(video)
     try {
         chrome.tabs.sendMessage(tabId, jso { type = "gate"; this.url = gate }).await()
     } catch (e: Throwable) {
@@ -55,26 +67,69 @@ private suspend fun gateTabIfNeeded(tabId: Int, url: String) {
     }
 }
 
-fun gateUrl(videoId: String): String = chrome.runtime.getURL("gate.html") + "?v=" + videoId
+fun gateUrl(video: Packs.GatedVideo): String =
+    chrome.runtime.getURL("gate.html") + "?v=" + video.videoId + "&s=" + video.packId
 
-/** Replaces all dynamic DNR rules with the current pack's redirects, or none when disabled. */
-private suspend fun syncRedirects() {
+fun blockedUrl(platformName: String): String =
+    chrome.runtime.getURL("blocked.html") + "?p=" + js("encodeURIComponent")(platformName)
+
+/** Replaces all dynamic DNR rules with those of the current packs, or none when disabled. */
+private suspend fun syncDnrRules() {
     val state = loadState()
     val existing = chrome.declarativeNetRequest.getDynamicRules().await().map { it.id as Int }.toTypedArray()
-    val filters = if (state.enabled) state.matcher?.navigationRegexFilters().orEmpty() else emptyList()
-    val rules = filters.mapIndexed { index, filter ->
-        jso {
-            id = index + 1
-            priority = 1
-            action = jso {
-                type = "redirect"
-                redirect = jso { regexSubstitution = chrome.runtime.getURL("gate.html") + "?v=\\1" }
-            }
-            condition = jso {
-                regexFilter = filter
-                resourceTypes = arrayOf("main_frame")
+    val rules = if (state.enabled) gateRules(state.packs) + blockRules(state.packs) else emptyList()
+    chrome.declarativeNetRequest.updateDynamicRules(jso { removeRuleIds = existing; addRules = rules.toTypedArray() }).await()
+}
+
+private fun gateRules(packs: Packs): List<dynamic> {
+    var next = GATE_RULE_BASE
+    return packs.web.flatMap { (packId, matcher) ->
+        matcher.navigationRegexFilters().map { filter ->
+            jso {
+                id = next++
+                priority = 1
+                action = jso {
+                    type = "redirect"
+                    redirect = jso { regexSubstitution = chrome.runtime.getURL("gate.html") + "?v=\\1&s=" + packId }
+                }
+                condition = jso {
+                    regexFilter = filter
+                    resourceTypes = arrayOf("main_frame")
+                }
             }
         }
-    }.toTypedArray()
-    chrome.declarativeNetRequest.updateDynamicRules(jso { removeRuleIds = existing; addRules = rules }).await()
+    }
+}
+
+/**
+ * Per platform (ADR-0006): a plain block, which needs no host permission, and above it a
+ * redirect to blocked.html for the domains the manifest grants host permission for. A
+ * redirect without permission is not applied but still wins the match, so it would shadow
+ * the block and let the site load; hence the permission check.
+ */
+private suspend fun blockRules(packs: Packs): List<dynamic> {
+    val rules = mutableListOf<dynamic>()
+    packs.block.platforms.filter { it.domains.isNotEmpty() }.forEachIndexed { index, platform ->
+        val permitted = platform.domains.filter { hasHostPermission(it) }
+        if (permitted.isNotEmpty()) {
+            rules.add(jso {
+                id = BLOCK_RULE_BASE + 2 * index
+                priority = 2
+                action = jso { type = "redirect"; redirect = jso { url = blockedUrl(platform.name) } }
+                condition = jso { requestDomains = permitted.toTypedArray(); resourceTypes = arrayOf("main_frame") }
+            })
+        }
+        rules.add(jso {
+            id = BLOCK_RULE_BASE + 2 * index + 1
+            priority = 1
+            action = jso { type = "block" }
+            condition = jso { requestDomains = platform.domains.toTypedArray(); resourceTypes = arrayOf("main_frame", "sub_frame") }
+        })
+    }
+    return rules
+}
+
+private suspend fun hasHostPermission(domain: String): Boolean {
+    val granted = chrome.permissions.contains(jso { origins = arrayOf("*://*.$domain/*") }).await()
+    return granted
 }

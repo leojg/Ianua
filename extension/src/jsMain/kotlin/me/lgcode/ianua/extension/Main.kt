@@ -10,6 +10,7 @@ fun main() {
     when {
         location.protocol != "chrome-extension:" -> contentMain()
         location.pathname.endsWith("/gate.html") -> gateMain()
+        location.pathname.endsWith("/blocked.html") -> blockedMain()
         location.pathname.endsWith("/popup.html") -> popupMain()
     }
 }

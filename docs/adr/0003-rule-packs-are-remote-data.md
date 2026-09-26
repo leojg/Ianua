@@ -8,7 +8,9 @@ review (Chrome Web Store, Play, F-Droid) would leave users unprotected for days 
 The Chrome Web Store (MV3) forbids remotely hosted *code*; remote *data* is allowed.
 
 ## Decision
-- Detection rules live in `rules/<site>.json` (`schemaVersion`, `version`, `web`, `android`).
+- Detection rules live in `rules/<site>.json` (`schemaVersion`, `version`, `web`, `android`,
+  and since ADR-0006 `block`). Every file in `rules/` is a pack, and each is refreshed
+  independently.
 - Every build bundles the current packs. Clients refresh about daily from
   `https://raw.githubusercontent.com/leojg/Ianua/master/rules/<site>.json`. They validate
   the pack, keep the last-known-good copy, and reject unknown `schemaVersion`s and version

@@ -4,12 +4,16 @@
 block Shorts outright: to get in, you stop, read a prompt, wait 10 seconds, and choose to
 continue.
 
-v0.1 covers **YouTube Shorts** on two surfaces:
+Platforms that are *nothing but* short videos (TikTok, Douyin, Kuaishou, Kwai, Likee, Triller,
+Moj, Josh) get no door: they are **blocked outright**, as apps on Android and as sites in the
+browser.
+
+Ianua covers **YouTube Shorts** and the block list on two surfaces:
 
 | | What it does |
 |---|---|
-| **Chromium extension** (Chrome, Brave, Chromium, Edge) | Hides Shorts shelves, sidebar entries, grid/search results and channel Shorts tabs. Opening a Short (link, typed URL or in-page navigation) shows the gate. *Continue* opens the video in the regular player, so the swipe feed never appears. |
-| **Android app** | An accessibility service notices the Shorts player in the YouTube app, or a Shorts address in Brave, Chrome, Firefox, Edge or Samsung Internet. It silences playback and shows the gate. *Continue* unlocks Shorts for 5 minutes. |
+| **Chromium extension** (Chrome, Brave, Chromium, Edge) | Blocks the whole sites of blocked platforms. Hides Shorts shelves, sidebar entries, grid/search results and channel Shorts tabs. Opening a Short (link, typed URL or in-page navigation) shows the gate. *Continue* opens the video in the regular player, so the swipe feed never appears. |
+| **Android app** | An accessibility service notices the Shorts player in the YouTube app, or a Shorts address in Brave, Chrome, Firefox, Edge or Samsung Internet. It silences playback and shows the gate. *Continue* unlocks Shorts for 5 minutes. Opening a blocked app sends you to the home screen; a blocked site in a browser goes back. |
 
 Everything runs locally. The only network request is a daily download of updated detection
 rules from this repository (`rules/`).
@@ -18,7 +22,7 @@ rules from this repository (`rules/`).
 
 | Path | What |
 |---|---|
-| `rules/` | Rule packs: what counts as Shorts, per site. Data only. See [`rules/README.md`](rules/README.md). |
+| `rules/` | Rule packs, one per file: `youtube.json` (the Shorts gate), `blocked.json` (the block list). Data only. See [`rules/README.md`](rules/README.md). |
 | `shared/` | Kotlin Multiplatform: rule parsing and validation, matchers, gate policy, rule updates. |
 | `extension/` | The MV3 extension in Kotlin/JS (`static/` holds the manifest and pages). `e2e/` holds the Playwright smoke test. |
 | `androidApp/` | Android app: Jetpack Compose UI, accessibility service, gate overlay. Flavors `play` and `fdroid`. |

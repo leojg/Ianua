@@ -52,6 +52,9 @@ class RuleRepository(
 
     companion object {
         const val YOUTUBE = "youtube"
+
+        /** Every pack shipped in the build: one per file in `rules/` (ADR-0006). */
+        val bundledIds: List<String> get() = BundledRules.all.keys.sorted()
         fun remoteUrl(id: String) = "https://raw.githubusercontent.com/leojg/Ianua/master/rules/$id.json"
     }
 }

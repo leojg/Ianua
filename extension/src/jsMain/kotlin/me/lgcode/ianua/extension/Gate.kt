@@ -12,6 +12,7 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.p
 import me.lgcode.ianua.gate.GateCopy
 import me.lgcode.ianua.gate.GatePolicy
+import me.lgcode.ianua.rules.RuleRepository
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.url.URLSearchParams
 import kotlin.js.Date
@@ -21,9 +22,11 @@ private const val FALLBACK_URL = "https://www.youtube.com/"
 /** gate.html?v=<id>: the door. *Continue* unlocks after the countdown and opens the regular player. */
 fun gateMain() {
     launch {
-        val id = URLSearchParams(window.location.search).get("v")
+        val params = URLSearchParams(window.location.search)
+        val id = params.get("v")
         val state = loadState()
-        val matcher = state.matcher
+        // `s` names the gate pack; gate URLs from v0.1 have none and were always YouTube.
+        val matcher = state.packs.web[params.get("s") ?: RuleRepository.YOUTUBE]
         if (!isSafeVideoId(id) || matcher == null) {
             window.location.replace(FALLBACK_URL)
             return@launch

@@ -8,31 +8,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import me.lgcode.ianua.rules.RefreshResult
 import me.lgcode.ianua.rules.RuleFetcher
-import me.lgcode.ianua.rules.RulePack
+import me.lgcode.ianua.rules.Packs
 import me.lgcode.ianua.rules.RuleRepository
 import me.lgcode.ianua.rules.RuleStore
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** The rule pack in effect, observable so the running service picks up refreshes. */
+/** The rule packs in effect (one per file in `rules/`), observable so the service picks up refreshes. */
 class Rules(context: Context) {
-    private val repository = RuleRepository(
-        RuleRepository.YOUTUBE,
-        FileRuleStore(File(context.filesDir, "rules")),
-        HttpRuleFetcher,
-    )
+    private val store = FileRuleStore(File(context.filesDir, "rules"))
+    private val repositories = RuleRepository.bundledIds.map { RuleRepository(it, store, HttpRuleFetcher) }
 
-    private val _current = MutableStateFlow(repository.bundled)
-    val current: StateFlow<RulePack> = _current.asStateFlow()
+    private val _current = MutableStateFlow(Packs(repositories.map { it.bundled }))
+    val current: StateFlow<Packs> = _current.asStateFlow()
 
-    /** Replaces the bundled pack with the cached one, if that is newer. */
+    /** Replaces bundled packs with cached ones where those are newer. */
     suspend fun load() {
-        _current.value = repository.current()
+        _current.value = Packs(repositories.map { it.current() })
     }
 
-    suspend fun refresh(): RefreshResult = repository.refresh().also {
-        if (it is RefreshResult.Updated) _current.value = it.pack
+    /** Refreshes every pack; returns each pack's result. */
+    suspend fun refresh(): List<RefreshResult> = repositories.map { it.refresh() }.also { results ->
+        if (results.any { it is RefreshResult.Updated }) load()
     }
 }
 

@@ -4,9 +4,27 @@
     <!-- The daily rule-pack fetch from GitHub (ADR-0003). Nothing else goes out. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Lets the app see whether the YouTube app is installed (package visibility, API 30+). -->
+    <!--
+      Package visibility (API 30+): lets the main screen show whether YouTube and the blocked
+      apps are installed. Keep the blocked list in sync with rules/blocked.json
+      (:androidApp:verifyBlockedPackages checks it). QUERY_ALL_PACKAGES is deliberately not
+      requested.
+    -->
     <queries>
         <package android:name="com.google.android.youtube" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.ss.android.ugc.trill" />
+        <package android:name="com.zhiliaoapp.musically.go" />
+        <package android:name="com.ss.android.ugc.aweme" />
+        <package android:name="com.ss.android.ugc.aweme.lite" />
+        <package android:name="com.smile.gifmaker" />
+        <package android:name="com.kuaishou.nebula" />
+        <package android:name="com.kwai.video" />
+        <package android:name="video.like" />
+        <package android:name="video.like.lite" />
+        <package android:name="co.triller.droid" />
+        <package android:name="in.mohalla.video" />
+        <package android:name="com.eterno.shortvideos" />
     </queries>
 
     <application

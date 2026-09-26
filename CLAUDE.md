@@ -13,12 +13,16 @@ a Chromium MV3 extension and an Android app. License: GPL-3.0.
    not elsewhere. Postmortems go in `docs/postmortem/<slug>.md`.
 
 ## Layout
-- `rules/` — rule packs (JSON, data only) and fixtures. Merging to `master` here ships to users
-  (ADR-0003).
+- `rules/` — rule packs (JSON, data only), one per file (`youtube.json` gate, `blocked.json`
+  hard block, ADR-0006), and fixtures. Merging to `master` here ships to users (ADR-0003).
+  A package added to `blocked.json` must also go in the Android manifest's `<queries>` and
+  the accessibility config; `./gradlew check` enforces it.
 - `shared/` — Kotlin Multiplatform (Android + JS). All non-glue logic lives here, tested in
   `commonTest`.
 - `extension/` — one Kotlin/JS bundle for every context (`Main.kt` dispatches), `static/`
   (manifest, pages, icons), `e2e/` (Playwright smoke test). Stdlib coroutines only (ADR-0002).
+  Never index a `dynamic` straight off a suspend call (`x.await()[k]`): Kotlin/JS drops the
+  suspension point. Assign to a local first (see `Async.kt`).
 - `androidApp/` — Jetpack Compose + `IanuaAccessibilityService`; flavors `play`, `fdroid`.
 
 ## Hard rules

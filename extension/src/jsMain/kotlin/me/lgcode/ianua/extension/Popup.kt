@@ -29,9 +29,9 @@ fun popupMain() {
                             launch { setEnabled(checked) }
                         }
                     }
-                    span { +"Gate YouTube Shorts" }
+                    span { +"Gate Shorts, block short-video apps" }
                 }
-                p("meta") { +"Rules v${state.pack.version}" }
+                p("meta") { +"Rules: ${state.packs.version()}" }
             }
         }
     }

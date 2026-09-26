@@ -13,8 +13,8 @@ android {
         // 36 satisfies Google Play's current target requirement; move to 37 once its
         // behaviour changes have been reviewed.
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     // ADR-0004: identical in v0.1. Anything Play-only (e.g. Play Billing) goes in `play`
@@ -67,3 +67,30 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.kotlinx.coroutines.core)
 }
+
+/**
+ * A package added to rules/blocked.json is only blocked from the first event, but the main
+ * screen can only see it installed, and the service only hears it before the rule packs
+ * load, if it is also in the manifest's <queries> and the accessibility config.
+ */
+val verifyBlockedPackages by tasks.registering {
+    group = "verification"
+    description = "Checks that every package in rules/blocked.json is in <queries> and the accessibility config."
+    val rules = rootProject.layout.projectDirectory.file("rules/blocked.json")
+    val manifest = layout.projectDirectory.file("src/main/AndroidManifest.xml")
+    val config = layout.projectDirectory.file("src/main/res/xml/accessibility_service_config.xml")
+    inputs.files(rules, manifest, config)
+    doLast {
+        val packages = Regex("\"androidPackages\"\\s*:\\s*\\[([^\\]]*)]")
+            .findAll(rules.asFile.readText())
+            .flatMap { Regex("\"([^\"]+)\"").findAll(it.groupValues[1]).map { m -> m.groupValues[1] } }
+            .toSet()
+        val manifestText = manifest.asFile.readText()
+        val configText = config.asFile.readText()
+        val missing = packages.filter { "<package android:name=\"$it\"" !in manifestText || it !in configText }
+        check(packages.isNotEmpty()) { "no androidPackages found in rules/blocked.json" }
+        check(missing.isEmpty()) { "Add to <queries> in AndroidManifest.xml and to accessibility_service_config.xml: $missing" }
+    }
+}
+
+tasks.named("check") { dependsOn(verifyBlockedPackages) }

@@ -68,8 +68,26 @@ object RulePackParser {
                 return "android.browsers needs a package and at least one urlBarViewId each"
             }
         }
+        pack.block?.let { block ->
+            if (block.platforms.isEmpty()) return "block.platforms is empty"
+            for (platform in block.platforms) {
+                if (!isValidName(platform.name)) return "block.platforms: invalid name ${platform.name}"
+                if (platform.domains.isEmpty() && platform.androidPackages.isEmpty()) {
+                    return "block.platforms: ${platform.name} has no domains or packages"
+                }
+                if (platform.domains.any { !it.matches(HOST) }) return "block.platforms: ${platform.name} has an invalid domain"
+                if (platform.androidPackages.any { !it.matches(PACKAGE) }) {
+                    return "block.platforms: ${platform.name} has an invalid package"
+                }
+            }
+        }
         return null
     }
+
+    /** Shown on a page and passed in a URL: letters, digits, spaces and a little punctuation. */
+    private fun isValidName(name: String): Boolean =
+        name.length in 1..40 && name.first().isLetterOrDigit() &&
+            name.all { it.isLetterOrDigit() || it in " .'&-" }
 
     /** Counts capturing groups: `(` not escaped and not followed by `?`. */
     internal fun captureGroupCount(regex: String): Int {
@@ -89,5 +107,7 @@ object RulePackParser {
         return count
     }
 
+    // At least two labels, so a bare public suffix like "com" can never be blocked.
     private val HOST = Regex("^[a-z0-9-]+(\\.[a-z0-9-]+)+$")
+    private val PACKAGE = Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
 }

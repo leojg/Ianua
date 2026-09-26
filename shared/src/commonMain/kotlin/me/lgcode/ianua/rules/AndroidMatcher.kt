@@ -59,13 +59,8 @@ class AndroidMatcher(private val rules: AndroidRules, private val web: WebMatche
         return false
     }
 
-    /** Only an unfocused bar counts: while focused it holds what the user is still typing. */
     private fun isGatedAddressBar(root: ScreenNode, urlBars: List<String>): Boolean {
-        val bar = urlBars.asSequence()
-            .flatMap { root.findByViewId(it) }
-            .firstOrNull { it.isVisible } ?: return false
-        if (bar.isFocused) return false
-        val url = bar.text ?: return false
+        val url = addressBarText(root, urlBars) ?: return false
         return web?.gatedVideoIdInAddressBar(url) != null
     }
 
@@ -77,4 +72,15 @@ class AndroidMatcher(private val rules: AndroidRules, private val web: WebMatche
         const val MAX_NODES = 2_000
         const val MAX_DEPTH = 40
     }
+}
+
+/**
+ * The text of the first visible address bar among [urlBarIds]. Null while the bar is focused:
+ * then it holds what the user is still typing, not the page they are on.
+ */
+fun addressBarText(root: ScreenNode, urlBarIds: List<String>): String? {
+    val bar = urlBarIds.asSequence()
+        .flatMap { root.findByViewId(it) }
+        .firstOrNull { it.isVisible } ?: return null
+    return if (bar.isFocused) null else bar.text
 }
