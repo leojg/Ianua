@@ -13,36 +13,44 @@ import me.lgcode.ianua.gate.GateDecision
 import me.lgcode.ianua.gate.GateDefaults
 import me.lgcode.ianua.gate.GatePolicy
 import me.lgcode.ianua.ianua
-import me.lgcode.ianua.rules.AndroidMatcher
-import me.lgcode.ianua.rules.WebMatcher
+import me.lgcode.ianua.rules.BlockPlatform
+import me.lgcode.ianua.rules.Packs
+import me.lgcode.ianua.rules.Verdict
+import me.lgcode.ianua.ui.BlockScreen
+import me.lgcode.ianua.ui.GateScreen
 
 /**
- * Watches the gated apps' screens (ADR-0004) and listed browsers' address bars (ADR-0005),
- * and puts the gate in front of Shorts. Screen content is only evaluated in memory; nothing
- * is stored or sent.
+ * Puts the door in front of Shorts in the gated apps (ADR-0004) and listed browsers (ADR-0005),
+ * and hard-blocks whole-app short-video platforms (ADR-0006). Screen content is only
+ * evaluated in memory; nothing is stored or sent. Blocked apps are recognised by package name
+ * alone, without reading their screen.
  */
 class IanuaAccessibilityService : AccessibilityService() {
     private val scope = MainScope()
     private val handler = Handler(Looper.getMainLooper())
     private val policy = GatePolicy(clock = SystemClock::elapsedRealtime)
     private val evaluateRunnable = Runnable { evaluate() }
+    private val dismissBlockRunnable = Runnable { dismissBlock() }
 
-    private var matcher: AndroidMatcher? = null
-    private var urlBarIds: Set<String> = emptySet()
+    private var packs: Packs? = null
     private var enabled = true
-    private var overlay: GateOverlay? = null
+    private var gate: ComposeOverlay? = null
+    private var blockCard: ComposeOverlay? = null
     private val audio by lazy { GateAudio(this) }
+
+    // Escalation when browser back does not leave a blocked page.
+    private var lastBrowserBlockAt = 0L
+    private var browserBlockStreak = 0
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         val app = ianua
         scope.launch {
             app.rules.load()
-            combine(app.rules.current, app.settings.enabled) { pack, on -> pack to on }.collect { (pack, on) ->
-                matcher = pack.android?.let { AndroidMatcher(it, pack.web?.let(::WebMatcher)) }
-                urlBarIds = pack.android?.browsers.orEmpty().flatMap { it.urlBarViewIds }.toSet()
+            combine(app.rules.current, app.settings.enabled) { p, on -> p to on }.collect { (p, on) ->
+                packs = p
                 enabled = on
-                narrowToGatedPackages()
+                narrowToWatchedPackages()
                 if (!on) reset()
             }
         }
@@ -50,35 +58,46 @@ class IanuaAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (!enabled) return
-        val packages = matcher?.packages ?: return
-        if (event.packageName?.toString() !in packages) return
+        val packs = packs ?: return
+        val packageName = event.packageName?.toString() ?: return
+        if (packageName !in packs.androidPackages) return
+        packs.isBlockedPackage(packageName)?.let { platform ->
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) blockApp(platform)
+            return
+        }
         // Content-changed events arrive in bursts while scrolling; evaluate once per burst.
         handler.removeCallbacks(evaluateRunnable)
         handler.postDelayed(evaluateRunnable, EVALUATE_DELAY_MS)
     }
 
     private fun evaluate() {
-        val matcher = matcher ?: return
+        val packs = packs ?: return
         val root = rootInActiveWindow ?: return
         val packageName = root.packageName?.toString() ?: return
         val screen = NodeInfoScreenNode(root)
-        DebugDump.maybeDump(this, packageName, screen, keepTextOf = urlBarIds)
-        when (policy.onScreen(matcher.isGatedScreen(packageName, screen))) {
+        DebugDump.maybeDump(this, packageName, screen, keepTextOf = packs.urlBarIds)
+        val verdict = packs.verdict(packageName, screen)
+        if (verdict is Verdict.Block) blockInBrowser(verdict.platform)
+        when (policy.onScreen(verdict == Verdict.Gate)) {
             GateDecision.SHOW_GATE -> showGate()
             GateDecision.HIDE_GATE -> hideGate()
             GateDecision.NONE -> Unit
         }
     }
 
+    // --- the Shorts door ---
+
     private fun showGate() {
-        if (overlay != null) return
+        if (gate != null) return
         audio.silence()
-        overlay = GateOverlay(this, policy, onGoBack = ::goBack, onContinue = ::proceed).also { it.show() }
+        gate = ComposeOverlay(this) {
+            GateScreen(remainingMs = policy::remainingCountdownMs, onGoBack = ::goBack, onContinue = ::proceed)
+        }.also { it.show() }
     }
 
     private fun hideGate() {
-        overlay?.dismiss()
-        overlay = null
+        gate?.dismiss()
+        gate = null
         audio.restore()
     }
 
@@ -97,14 +116,44 @@ class IanuaAccessibilityService : AccessibilityService() {
         handler.postDelayed(evaluateRunnable, GateDefaults.ALLOWANCE_MS + EVALUATE_DELAY_MS)
     }
 
+    // --- the hard block ---
+
+    private fun blockApp(platform: BlockPlatform) {
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        showBlockCard(platform)
+    }
+
+    private fun blockInBrowser(platform: BlockPlatform) {
+        val now = SystemClock.elapsedRealtime()
+        browserBlockStreak = if (now - lastBrowserBlockAt < BROWSER_RETRY_WINDOW_MS) browserBlockStreak + 1 else 1
+        lastBrowserBlockAt = now
+        // Back normally leaves the page; if it keeps coming back (a redirect, a fresh tab), leave the browser.
+        performGlobalAction(if (browserBlockStreak > MAX_BROWSER_BACKS) GLOBAL_ACTION_HOME else GLOBAL_ACTION_BACK)
+        showBlockCard(platform)
+    }
+
+    private fun showBlockCard(platform: BlockPlatform) {
+        handler.removeCallbacks(dismissBlockRunnable)
+        handler.postDelayed(dismissBlockRunnable, BLOCK_CARD_MS)
+        if (blockCard?.isShowing == true) return
+        blockCard = ComposeOverlay(this) { BlockScreen(platform.name, onOk = ::dismissBlock) }.also { it.show() }
+    }
+
+    private fun dismissBlock() {
+        handler.removeCallbacks(dismissBlockRunnable)
+        blockCard?.dismiss()
+        blockCard = null
+    }
+
     private fun reset() {
         policy.onGoBack()
         hideGate()
+        dismissBlock()
     }
 
-    /** Receive events only from the packages the current rule pack gates. */
-    private fun narrowToGatedPackages() {
-        val packages = matcher?.packages ?: return
+    /** Receive events only from the packages the current rule packs cover. */
+    private fun narrowToWatchedPackages() {
+        val packages = packs?.androidPackages ?: return
         serviceInfo = serviceInfo?.apply { packageNames = packages.toTypedArray() } ?: return
     }
 
@@ -113,11 +162,15 @@ class IanuaAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         hideGate()
+        dismissBlock()
         scope.cancel()
         super.onDestroy()
     }
 
     private companion object {
         const val EVALUATE_DELAY_MS = 120L
+        const val BLOCK_CARD_MS = 4_000L
+        const val BROWSER_RETRY_WINDOW_MS = 3_000L
+        const val MAX_BROWSER_BACKS = 2
     }
 }

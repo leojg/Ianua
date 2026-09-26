@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Scoped to the apps and browsers Ianua gates (ADR-0004, ADR-0005). The service replaces
-  packageNames at runtime with the rule pack's android.packages + android.browsers.
+  Scoped to the apps and browsers Ianua gates or blocks (ADR-0004, -0005, -0006). The service
+  replaces packageNames at runtime with the rule packs' packages, browsers and blocked apps.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -13,5 +13,5 @@
     android:isAccessibilityTool="false"
     tools:ignore="UnusedAttribute"
     android:notificationTimeout="150"
-    android:packageNames="com.google.android.youtube,com.brave.browser,com.android.chrome,com.microsoft.emmx,org.mozilla.firefox,com.sec.android.app.sbrowser"
+    android:packageNames="com.google.android.youtube,com.brave.browser,com.android.chrome,com.microsoft.emmx,org.mozilla.firefox,com.sec.android.app.sbrowser,com.zhiliaoapp.musically,com.ss.android.ugc.trill,com.zhiliaoapp.musically.go,com.ss.android.ugc.aweme,com.ss.android.ugc.aweme.lite,com.smile.gifmaker,com.kuaishou.nebula,com.kwai.video,video.like,video.like.lite,co.triller.droid,in.mohalla.video,com.eterno.shortvideos"
     android:settingsActivity="me.lgcode.ianua.ui.MainActivity" />

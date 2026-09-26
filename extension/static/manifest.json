@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Ianua — a door in front of Shorts",
   "short_name": "Ianua",
-  "version": "0.1.0",
-  "description": "Hides YouTube Shorts and puts a pause in front of them: you only get in on purpose.",
+  "version": "0.2.0",
+  "description": "Hides YouTube Shorts and puts a pause in front of them, and blocks apps that are nothing but short videos (TikTok and similar).",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -22,22 +22,70 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*", "https://youtube.com/*", "https://m.youtube.com/*"],
-      "js": ["ianua.js"],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://m.youtube.com/*"
+      ],
+      "js": [
+        "ianua.js"
+      ],
       "run_at": "document_start"
     }
   ],
-  "permissions": ["storage", "webNavigation", "alarms", "declarativeNetRequest"],
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "alarms",
+    "declarativeNetRequest"
+  ],
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://youtube.com/*",
     "https://m.youtube.com/*",
+    "*://*.douyin.com/*",
+    "*://*.gifshow.com/*",
+    "*://*.iesdouyin.com/*",
+    "*://*.kuaishou.com/*",
+    "*://*.kwai.com/*",
+    "*://*.like.video/*",
+    "*://*.likee.video/*",
+    "*://*.mojapp.in/*",
+    "*://*.myjosh.in/*",
+    "*://*.tiktok.com/*",
+    "*://*.tiktokv.com/*",
+    "*://*.triller.co/*",
     "https://raw.githubusercontent.com/*"
   ],
   "web_accessible_resources": [
     {
-      "resources": ["gate.html"],
-      "matches": ["https://www.youtube.com/*", "https://youtube.com/*", "https://m.youtube.com/*"]
+      "resources": [
+        "gate.html"
+      ],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://m.youtube.com/*"
+      ]
+    },
+    {
+      "resources": [
+        "blocked.html"
+      ],
+      "matches": [
+        "*://*.douyin.com/*",
+        "*://*.gifshow.com/*",
+        "*://*.iesdouyin.com/*",
+        "*://*.kuaishou.com/*",
+        "*://*.kwai.com/*",
+        "*://*.like.video/*",
+        "*://*.likee.video/*",
+        "*://*.mojapp.in/*",
+        "*://*.myjosh.in/*",
+        "*://*.tiktok.com/*",
+        "*://*.tiktokv.com/*",
+        "*://*.triller.co/*"
+      ]
     }
   ]
 }

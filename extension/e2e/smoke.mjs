@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, '..', 'build', 'dist');
 const homeHtml = readFileSync(join(here, '..', '..', 'rules', 'fixtures', 'web', 'youtube_home.html'), 'utf8');
+const manifest = JSON.parse(readFileSync(join(dist, 'manifest.json'), 'utf8'));
+const blockedPack = JSON.parse(readFileSync(join(here, '..', '..', 'rules', 'blocked.json'), 'utf8'));
 const ID = 'abcDEF12345';
 
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'ianua-')), {
@@ -26,6 +28,11 @@ await context.route(/^https:\/\/(www\.|m\.)?youtube\.com\//, (route) => {
       : homeHtml;
   route.fulfill({ status: 200, contentType: 'text/html', body });
 });
+
+// Blocked platforms and a stand-in for a domain added by a rule update. If one of these pages
+// renders, blocking failed.
+await context.route(/^https?:\/\/([a-z0-9-]+\.)*(tiktok\.com|blocked-example\.test)\//, (route) =>
+  route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>site</title><p id="site">SITE LOADED</p>' }));
 
 let worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
 const extensionId = new URL(worker.url()).host;
@@ -59,7 +66,7 @@ await waitForRuleCount((n) => n > 0, 'DNR rules to be installed');
 await test('hard load of a Short lands on the gate', async () => {
   const page = await context.newPage();
   await page.goto(`https://www.youtube.com/shorts/${ID}?feature=share`);
-  await page.waitForURL(`${gatePrefix}?v=${ID}`);
+  await page.waitForURL(`${gatePrefix}?v=${ID}&s=youtube`);
   await page.getByRole('heading', { name: "You're about to enter Shorts" }).waitFor();
   await page.close();
 });
@@ -67,7 +74,7 @@ await test('hard load of a Short lands on the gate', async () => {
 await test('mobile web Shorts are gated too', async () => {
   const page = await context.newPage();
   await page.goto(`https://m.youtube.com/shorts/${ID}`);
-  await page.waitForURL(`${gatePrefix}?v=${ID}`);
+  await page.waitForURL(`${gatePrefix}?v=${ID}&s=youtube`);
   await page.close();
 });
 
@@ -106,10 +113,63 @@ await test('in-page navigation to a Short is gated, and Go back returns', async 
   await page.goto('https://www.youtube.com/');
   await page.waitForFunction(() => document.getElementById('ianua-hide')?.textContent.length > 0);
   await page.click('#spa-shorts');
-  await page.waitForURL(`${gatePrefix}?v=spaDEF12345`);
+  await page.waitForURL(`${gatePrefix}?v=spaDEF12345&s=youtube`);
   await page.click('#back');
   await page.waitForURL('https://www.youtube.com/');
   await page.close();
+});
+
+await test('manifest has host permission for every bundled blocked domain', async () => {
+  const hosts = manifest.host_permissions;
+  for (const platform of blockedPack.block.platforms) {
+    for (const domain of platform.domains) {
+      assert.ok(hosts.includes(`*://*.${domain}/*`), `missing host permission for ${domain}`);
+    }
+  }
+});
+
+await test('a blocked site lands on the blocked page, with no way through', async () => {
+  const page = await context.newPage();
+  await page.goto('https://www.tiktok.com/@someone/video/7400000000000000000');
+  await page.waitForURL(`chrome-extension://${extensionId}/blocked.html?p=TikTok`);
+  await page.getByRole('heading', { name: 'TikTok is blocked' }).waitFor();
+  assert.equal(await page.locator('#continue').count(), 0);
+  await page.close();
+});
+
+await test('short links and bare domains are blocked too', async () => {
+  const page = await context.newPage();
+  for (const url of ['https://vm.tiktok.com/ZMabc123/', 'https://tiktok.com/']) {
+    await page.goto(url);
+    await page.waitForURL(/blocked\.html\?p=TikTok/);
+  }
+  await page.close();
+});
+
+await test('Go back leaves the blocked page', async () => {
+  const page = await context.newPage();
+  await page.goto('https://www.youtube.com/');
+  await page.goto('https://www.tiktok.com/');
+  await page.waitForURL(/blocked\.html/);
+  await page.click('#back');
+  await page.waitForURL('https://www.youtube.com/');
+  await page.close();
+});
+
+await test('a domain added by a rule update, without host permission, is still blocked', async () => {
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  const before = await dynamicRuleCount();
+  const patched = structuredClone(blockedPack);
+  patched.version += 1;
+  patched.block.platforms.push({ name: 'Example', domains: ['blocked-example.test'] });
+  await popup.evaluate((text) => chrome.storage.local.set({ 'rules.blocked': text }), JSON.stringify(patched));
+  await waitForRuleCount((n) => n === before + 1, 'the new platform\'s block rule');
+  const page = await context.newPage();
+  const error = await page.goto('https://blocked-example.test/').then(() => null, (e) => e.message);
+  assert.match(error ?? `loaded ${page.url()}`, /ERR_BLOCKED_BY_CLIENT/);
+  await page.close();
+  await popup.close();
 });
 
 await test('switching Ianua off lets Shorts through', async () => {
@@ -121,6 +181,8 @@ await test('switching Ianua off lets Shorts through', async () => {
   await page.goto(`https://www.youtube.com/shorts/${ID}`);
   await page.locator('#shorts').waitFor();
   assert.equal(page.url(), `https://www.youtube.com/shorts/${ID}`);
+  await page.goto('https://www.tiktok.com/');
+  await page.locator('#site').waitFor();
   await popup.locator('#enabled').check();
   await page.close();
   await popup.close();

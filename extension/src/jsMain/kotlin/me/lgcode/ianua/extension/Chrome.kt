@@ -16,6 +16,11 @@ external interface Chrome {
     val webNavigation: WebNavigation
     val alarms: Alarms
     val declarativeNetRequest: DeclarativeNetRequest
+    val permissions: Permissions
+}
+
+external interface Permissions {
+    fun contains(permissions: dynamic): kotlin.js.Promise<Boolean>
 }
 
 external interface ChromeEvent<T> {

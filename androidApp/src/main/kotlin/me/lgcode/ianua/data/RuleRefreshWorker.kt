@@ -16,9 +16,9 @@ import java.util.concurrent.TimeUnit
 /** Daily rule-pack refresh from GitHub (ADR-0003). WorkManager runs on JobScheduler, no GMS. */
 class RuleRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        val result = applicationContext.ianua.rules.refresh()
-        Log.i(TAG, "rule refresh: $result")
-        return if (result is RefreshResult.FetchFailed) Result.retry() else Result.success()
+        val results = applicationContext.ianua.rules.refresh()
+        Log.i(TAG, "rule refresh: $results")
+        return if (results.all { it is RefreshResult.FetchFailed }) Result.retry() else Result.success()
     }
 
     companion object {

@@ -20,17 +20,17 @@ fun contentMain() {
     fun gate(url: String, cancel: () -> Boolean = { false }) {
         val s = state ?: return
         if (!s.enabled || gating) return
-        val id = s.matcher?.gatedVideoId(url) ?: return
-        if (!isSafeVideoId(id)) return
+        val video = s.packs.gatedVideo(url) ?: return
+        if (!isSafeVideoId(video.videoId)) return
         gating = true
         // A cancelled navigation leaves us on the previous page: add the gate after it, so
         // *Go back* returns there. Otherwise we are on the Short: replace it.
-        if (cancel()) window.location.assign(gateUrl(id)) else window.location.replace(gateUrl(id))
+        if (cancel()) window.location.assign(gateUrl(video)) else window.location.replace(gateUrl(video))
     }
 
     fun apply(newState: ExtensionState) {
         state = newState
-        style.textContent = if (newState.enabled) newState.matcher?.hideCss().orEmpty() else ""
+        style.textContent = if (newState.enabled) newState.packs.hideCss() else ""
         gate(window.location.href)
     }
 

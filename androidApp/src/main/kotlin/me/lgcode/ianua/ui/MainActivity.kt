@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
 import me.lgcode.ianua.BuildConfig
 import me.lgcode.ianua.R
 import me.lgcode.ianua.ianua
+import me.lgcode.ianua.rules.Packs
 import me.lgcode.ianua.service.DebugDump
 import me.lgcode.ianua.service.IanuaAccessibilityService
 
@@ -67,11 +68,13 @@ private fun HomeScreen() {
     val enabled by app.settings.enabled.collectAsStateWithLifecycle(initialValue = true)
     val rules by app.rules.current.collectAsStateWithLifecycle()
     var serviceOn by remember { mutableStateOf(isServiceEnabled(context)) }
-    var youtubeInstalled by remember { mutableStateOf(isYouTubeInstalled(context)) }
+    var youtubeInstalled by remember { mutableStateOf(isInstalled(context, YOUTUBE_PACKAGE)) }
+    var blockedInstalled by remember(rules) { mutableStateOf(installedBlockedPlatforms(context, rules)) }
     LifecycleResumeEffect(Unit) {
         // The user comes back from Accessibility settings: re-read.
         serviceOn = isServiceEnabled(context)
-        youtubeInstalled = isYouTubeInstalled(context)
+        youtubeInstalled = isInstalled(context, YOUTUBE_PACKAGE)
+        blockedInstalled = installedBlockedPlatforms(context, rules)
         onPauseOrDispose {}
     }
 
@@ -100,7 +103,10 @@ private fun HomeScreen() {
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (!youtubeInstalled) Text(stringResource(R.string.youtube_missing), style = MaterialTheme.typography.bodyMedium)
-                    Text(stringResource(R.string.rules_version, rules.version.toString()), style = MaterialTheme.typography.labelSmall)
+                    if (blockedInstalled.isNotEmpty()) {
+                        Text(stringResource(R.string.blocked_installed, blockedInstalled.joinToString()), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text(stringResource(R.string.rules_version, rules.version()), style = MaterialTheme.typography.labelSmall)
                 }
             }
 
@@ -146,12 +152,18 @@ private fun isServiceEnabled(context: Context): Boolean {
     return enabled.split(':').any { ComponentName.unflattenFromString(it) == component }
 }
 
-private fun isYouTubeInstalled(context: Context): Boolean = try {
-    context.packageManager.getPackageInfo("com.google.android.youtube", 0)
+private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
+
+private fun isInstalled(context: Context, packageName: String): Boolean = try {
+    context.packageManager.getPackageInfo(packageName, 0)
     true
 } catch (e: PackageManager.NameNotFoundException) {
     false
 }
+
+/** Names of blocked platforms with at least one app installed (visible via the manifest's <queries>). */
+private fun installedBlockedPlatforms(context: Context, packs: Packs): List<String> =
+    packs.block.platforms.filter { p -> p.androidPackages.any { isInstalled(context, it) } }.map { it.name }
 
 /** Android 13+ blocks accessibility for apps not installed from an app store session. */
 private fun needsRestrictedSettingsHint(context: Context): Boolean {

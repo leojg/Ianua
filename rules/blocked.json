@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "blocked",
+  "version": 2026092601,
+  "block": {
+    "platforms": [
+      {
+        "name": "TikTok",
+        "domains": [
+          "tiktok.com",
+          "tiktokv.com"
+        ],
+        "androidPackages": [
+          "com.zhiliaoapp.musically",
+          "com.ss.android.ugc.trill",
+          "com.zhiliaoapp.musically.go"
+        ]
+      },
+      {
+        "name": "Douyin",
+        "domains": [
+          "douyin.com",
+          "iesdouyin.com"
+        ],
+        "androidPackages": [
+          "com.ss.android.ugc.aweme",
+          "com.ss.android.ugc.aweme.lite"
+        ]
+      },
+      {
+        "name": "Kuaishou",
+        "domains": [
+          "kuaishou.com",
+          "gifshow.com"
+        ],
+        "androidPackages": [
+          "com.smile.gifmaker",
+          "com.kuaishou.nebula"
+        ]
+      },
+      {
+        "name": "Kwai",
+        "domains": [
+          "kwai.com"
+        ],
+        "androidPackages": [
+          "com.kwai.video"
+        ]
+      },
+      {
+        "name": "Likee",
+        "domains": [
+          "likee.video",
+          "like.video"
+        ],
+        "androidPackages": [
+          "video.like",
+          "video.like.lite"
+        ]
+      },
+      {
+        "name": "Triller",
+        "domains": [
+          "triller.co"
+        ],
+        "androidPackages": [
+          "co.triller.droid"
+        ]
+      },
+      {
+        "name": "Moj",
+        "domains": [
+          "mojapp.in"
+        ],
+        "androidPackages": [
+          "in.mohalla.video"
+        ]
+      },
+      {
+        "name": "Josh",
+        "domains": [
+          "myjosh.in"
+        ],
+        "androidPackages": [
+          "com.eterno.shortvideos"
+        ]
+      }
+    ]
+  }
+}

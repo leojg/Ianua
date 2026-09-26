@@ -14,6 +14,7 @@ data class RulePack(
     val version: Long,
     val web: WebRules? = null,
     val android: AndroidRules? = null,
+    val block: BlockRules? = null,
 )
 
 @Serializable
@@ -47,4 +48,17 @@ data class BrowserRule(
 data class ScreenRule(
     val anyViewId: List<String> = emptyList(),
     val anyContentDescription: List<String> = emptyList(),
+)
+
+/** Platforms that are short-form in their entirety: blocked outright (ADR-0006). */
+@Serializable
+data class BlockRules(val platforms: List<BlockPlatform>)
+
+@Serializable
+data class BlockPlatform(
+    /** Shown on the block screen: "<name> is blocked". */
+    val name: String,
+    /** Each matches itself and every subdomain. */
+    val domains: List<String> = emptyList(),
+    val androidPackages: List<String> = emptyList(),
 )

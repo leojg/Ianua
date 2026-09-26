@@ -55,6 +55,12 @@ change, and each change was forced by a real runtime, not by review. **Minor dri
   Transient audio focus pauses well-behaved players. If playback continues after 400 ms,
   the media stream is muted until the gate closes.
 
+> **Correction (2026-09-26, v0.2):** the coroutine crash above was most likely not
+> kotlinx's dispatcher. It was a Kotlin/JS compiler bug: `promise.await()[key]` on a
+> `dynamic` compiles without a suspension point. `ChromeRuleStore.load` had that shape, so
+> v0.1's extension also never read a fetched rule pack. See
+> `docs/specs/ianua-v0-2-block-whole-app-short-video.md`, Implementation notes.
+
 ## Design shifts along the way
 - **The Android matcher works on a `ScreenNode` interface, not on an `AccessibilityNodeInfo`
   snapshot.** It is lazy on device and serializable in tests, which puts the matcher in

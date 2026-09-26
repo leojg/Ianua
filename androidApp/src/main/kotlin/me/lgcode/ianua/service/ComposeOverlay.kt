@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.PixelFormat
 import android.view.WindowManager
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -13,39 +14,27 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import me.lgcode.ianua.gate.GatePolicy
-import me.lgcode.ianua.ui.GateScreen
 import me.lgcode.ianua.ui.IanuaTheme
 
 /**
- * Full-screen gate drawn by the accessibility service. TYPE_ACCESSIBILITY_OVERLAY needs no
- * SYSTEM_ALERT_WINDOW permission. Not focusable, so the gated app keeps the active window and
- * the service keeps seeing its screen underneath.
+ * A full-screen Compose window drawn by the accessibility service: the Shorts gate and the
+ * block card. TYPE_ACCESSIBILITY_OVERLAY needs no SYSTEM_ALERT_WINDOW permission. It is not
+ * focusable, so the app underneath keeps the active window and the service keeps seeing it.
  */
-class GateOverlay(
-    private val service: AccessibilityService,
-    private val policy: GatePolicy,
-    private val onGoBack: () -> Unit,
-    private val onContinue: () -> Unit,
-) {
+class ComposeOverlay(private val service: AccessibilityService, private val content: @Composable () -> Unit) {
     private val windowManager = service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val owner = OverlayOwner()
     private var view: ComposeView? = null
 
+    val isShowing: Boolean get() = view != null
+
     fun show() {
+        if (view != null) return
         owner.start()
         val composeView = ComposeView(service).apply {
             setViewTreeLifecycleOwner(owner)
             setViewTreeSavedStateRegistryOwner(owner)
-            setContent {
-                IanuaTheme {
-                    GateScreen(
-                        remainingMs = policy::remainingCountdownMs,
-                        onGoBack = onGoBack,
-                        onContinue = onContinue,
-                    )
-                }
-            }
+            setContent { IanuaTheme { content() } }
         }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -66,8 +55,8 @@ class GateOverlay(
 
     /** Compose needs a lifecycle and saved-state owner; a service window has neither. */
     private class OverlayOwner : LifecycleOwner, SavedStateRegistryOwner {
-        private val registry = LifecycleRegistry(this)
-        private val savedState = SavedStateRegistryController.create(this)
+        private var registry = LifecycleRegistry(this)
+        private var savedState = SavedStateRegistryController.create(this)
 
         override val lifecycle: Lifecycle get() = registry
         override val savedStateRegistry: SavedStateRegistry get() = savedState.savedStateRegistry

@@ -85,6 +85,22 @@ class RulePackParserTest {
     }
 
     @Test
+    fun validatesBlockPlatforms() {
+        fun block(platform: String) = """{"schemaVersion":1,"id":"b","version":1,"block":{"platforms":[$platform]}}"""
+        assertIs<ParseResult.Ok>(RulePackParser.parse(block("""{"name":"TikTok","domains":["tiktok.com"],"androidPackages":["com.zhiliaoapp.musically"]}""")))
+        assertIs<ParseResult.Ok>(RulePackParser.parse(block("""{"name":"App only","androidPackages":["a.b"]}""")))
+        listOf(
+            """{"name":"Empty"}""",
+            """{"name":"Bare suffix","domains":["com"]}""",
+            """{"name":"Path","domains":["tiktok.com/x"]}""",
+            """{"name":"Bad pkg","androidPackages":["not a package"]}""",
+            """{"name":"<script>","domains":["x.com"]}""",
+            """{"name":"","domains":["x.com"]}""",
+        ).forEach { assertIs<ParseResult.Invalid>(RulePackParser.parse(block(it)), it) }
+        assertIs<ParseResult.Invalid>(RulePackParser.parse("""{"schemaVersion":1,"id":"b","version":1,"block":{"platforms":[]}}"""))
+    }
+
+    @Test
     fun countsCaptureGroups() {
         assertEquals(1, RulePackParser.captureGroupCount("^/shorts/([A-Za-z0-9_-]{5,})"))
         assertEquals(0, RulePackParser.captureGroupCount("\\(x\\)"))

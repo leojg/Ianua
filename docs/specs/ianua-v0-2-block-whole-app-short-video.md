@@ -1,7 +1,7 @@
 # Ianua v0.2 — Block whole-app short-video platforms
 
 **Date:** 2026-09-25
-**Status:** plan, awaiting review; then `/implement`.
+**Status:** implemented 2026-09-26 (see *Implementation notes* at the end); not yet verified on a device.
 **Builds on:** ADR-0001 (UI-layer blocking; network-level allowed for whole-app platforms),
 ADR-0003 (rule packs), ADR-0004 (Android service), ADR-0005 (browser address bar).
 **Next:** v0.3 extends the existing *gate* rules to Instagram Reels, Facebook Reels,
@@ -189,3 +189,31 @@ new code anyway. Adding domains or packages to `blocked.json` needs no release.
   covered; deferred.
 - **Deferred to v0.3:** Instagram Reels, Facebook Reels, Snapchat Spotlight, X / Reddit /
   LinkedIn video feeds, per-platform settings, and naming the platform in the gate prompt.
+
+## Implementation notes (2026-09-26)
+
+- **Everything in the Steps shipped.** Shared: 57 tests on JS + JVM. Extension e2e: 11/11,
+  including the four new block tests. Android: both flavors build, lint clean.
+- **The redirect was shadowing the block.** The spec's open question was answered by its own
+  e2e test: a redirect rule without host permission still wins the match but is not applied,
+  so the site loaded. The redirect is now created only for domains
+  `chrome.permissions.contains` confirms. The plain block covers the rest.
+- **Real Kotlin/JS compiler bug, found on the way.** `promise.await()[key]` on a `dynamic`
+  compiles *without a suspension point*: the code reads `null`, and the promise later resumes a
+  finished coroutine ("This continuation is already complete"). `ChromeRuleStore.load` had
+  that shape, so **since v0.1 the extension never read a fetched rule pack**. It silently used
+  the bundled one. Found with a Node harness that runs the production bundle against a fake
+  `chrome` API, after the rule-update e2e test failed. This is also the likely real cause of
+  the v0.1 "kotlinx-coroutines dispatcher crash" on the same install path. Fixed by assigning
+  before indexing; the pitfall is documented in `Async.kt` and `CLAUDE.md`.
+- **Added unplanned:**
+  - `:androidApp:verifyBlockedPackages` (runs in `check`) keeps `<queries>` and the
+    accessibility config in sync with `blocked.json`;
+  - `Packs` also refuses to block a listed browser's package (it would lock the browser
+    entirely);
+  - gate URLs carry `&s=<pack>`.
+- **Changed:** `GateOverlay` became a generic `ComposeOverlay`, which is used by both the gate
+  and the block card. A refresh no longer publishes directly; a saved pack triggers the
+  republish through `storage.onChanged`.
+- **Not verified:** package names and domains against real installs; the Android block flow on
+  a device (no emulator here).
